@@ -1,0 +1,89 @@
+name: Deploy SAP BTP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-sap-btp-trial
+  cancel-in-progress: false
+
+env:
+  CF_API: https://api.cf.us10-001.hana.ondemand.com
+  CF_ORG: 4ebc416etrial
+  CF_SPACE: dev
+
+jobs:
+  deploy:
+    name: Construir, publicar e testar
+    runs-on: ubuntu-latest
+    environment: btp-trial
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Validar configurações do frontend
+        run: npm run validate:frontend
+
+      - name: Gerar pacote MTA
+        run: npm run build:btp
+
+      - name: Guardar pacote implantável
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-solicitacoes-mtar
+          path: mta_archives/*.mtar
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Instalar Cloud Foundry CLI
+        run: |
+          wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key \
+            | sudo gpg --dearmor -o /usr/share/keyrings/cloudfoundry-cli.gpg
+          echo "deb [signed-by=/usr/share/keyrings/cloudfoundry-cli.gpg] https://packages.cloudfoundry.org/debian stable main" \
+            | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+          sudo apt-get update
+          sudo apt-get install -y cf8-cli
+          cf install-plugin -r CF-Community "multiapps" -f
+
+      - name: Autenticar no SAP BTP
+        env:
+          CF_USERNAME: ${{ secrets.CF_USERNAME }}
+          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
+        run: |
+          cf api "$CF_API"
+          cf auth "$CF_USERNAME" "$CF_PASSWORD" --origin sap.ids
+          cf target -o "$CF_ORG" -s "$CF_SPACE"
+
+      - name: Publicar aplicação no SAP BTP
+        run: cf deploy mta_archives/qa-solicitacoes_1.0.0.mtar -f
+
+      - name: Executar teste E2E no Chrome
+        env:
+          CYPRESS_BTP_USERNAME: ${{ secrets.BTP_USERNAME }}
+          CYPRESS_BTP_PASSWORD: ${{ secrets.BTP_PASSWORD }}
+        run: npm run cypress:run
+
+      - name: Guardar evidências em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencias-cypress
+          path: cypress/screenshots/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -169,6 +169,35 @@ O pacote gerado fica em:
 mta_archives/qa-solicitacoes_1.0.0.mtar
 ```
 
+## CI/CD com GitHub Actions
+
+O projeto possui dois workflows em `.github/workflows`:
+
+- `ci.yml`: valida e constrói o projeto em pushes, pull requests e execução manual;
+- `deploy-btp.yml`: publica no SAP BTP em pushes para `main` ou execução manual e,
+  depois do deploy, executa o Cypress no Chrome.
+
+Crie um environment chamado `btp-trial` em **GitHub → Settings → Environments**.
+Cadastre nele estes secrets:
+
+| Secret | Conteúdo |
+| --- | --- |
+| `CF_USERNAME` | Usuário com acesso de desenvolvedor ao space Cloud Foundry |
+| `CF_PASSWORD` | Senha desse usuário no SAP Identity Service |
+| `BTP_USERNAME` | Usuário usado pelo Cypress no login do Work Zone |
+| `BTP_PASSWORD` | Senha usada pelo Cypress no login do Work Zone |
+
+Os valores de API, organização e space que não são secretos estão declarados no
+workflow de deploy. As senhas não devem ser adicionadas ao repositório.
+
+O deploy automático está configurado para:
+
+```text
+API:   https://api.cf.us10-001.hana.ondemand.com
+Org:   4ebc416etrial
+Space: dev
+```
+
 ### Disponibilização no SAP Build Work Zone
 
 Após o deployment:

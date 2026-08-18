@@ -8,3 +8,4 @@ cypress/videos/
 .DS_Store
 *.log
 cypress.env.json
+.cf/

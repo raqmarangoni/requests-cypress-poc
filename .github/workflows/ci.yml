@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar-e-construir:
+    name: Validar e construir
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Validar configurações do frontend
+        run: npm run validate:frontend
+
+      - name: Gerar pacote MTA
+        run: npm run build:btp
+
+      - name: Guardar pacote para inspeção
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-solicitacoes-mtar
+          path: mta_archives/*.mtar
+          if-no-files-found: error
+          retention-days: 7
