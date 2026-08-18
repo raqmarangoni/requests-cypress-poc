@@ -1,0 +1,11 @@
+{
+  "name": "qa-solicitacoes-ui",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node ../scripts/build-html5.js && cd dist && bestzip ../dist-zip/qa-solicitacoes-ui.zip *"
+  },
+  "devDependencies": {
+    "bestzip": "^2.2.1"
+  }
+}

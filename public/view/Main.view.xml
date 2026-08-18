@@ -1,0 +1,126 @@
+<mvc:View
+  controllerName="qa.solicitacoes.controller.Main"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:core="sap.ui.core"
+  xmlns:f="sap.ui.layout.form"
+  xmlns="sap.m">
+  <App>
+    <Page id="paginaSolicitacoes" title="Cadastro de Solicitações">
+      <content>
+        <VBox class="sapUiResponsiveContentPadding" renderType="Bare">
+          <ObjectStatus
+            class="sapUiSmallMarginBottom"
+            icon="sap-icon://learning-assistant"
+            text="Ambiente de estudos de Quality Assurance"
+            state="Information" />
+
+          <Panel
+            id="painelFormulario"
+            class="sapUiSmallMarginBottom"
+            headerText="Nova solicitação"
+            expandable="false">
+            <content>
+              <f:SimpleForm
+                id="formSolicitacao"
+                editable="true"
+                layout="ResponsiveGridLayout"
+                labelSpanXL="3"
+                labelSpanL="3"
+                labelSpanM="4"
+                labelSpanS="12"
+                columnsXL="2"
+                columnsL="2"
+                columnsM="1">
+                <Label text="Descrição" labelFor="descricao" />
+                <TextArea
+                  id="descricao"
+                  value="{formulario>/descricao}"
+                  rows="3"
+                  width="100%" />
+
+                <Label text="Centro de custo" labelFor="centroCusto" />
+                <Input id="centroCusto" value="{formulario>/centroCusto}" />
+
+                <Label text="Valor (R$)" labelFor="valor" />
+                <Input
+                  id="valor"
+                  value="{formulario>/valor}"
+                  type="Number" />
+
+                <Label text="Nome do usuário" labelFor="nomeUsuario" />
+                <Input id="nomeUsuario" value="{formulario>/nomeUsuario}" />
+
+                <Label text="Role do usuário" labelFor="roleUsuario" />
+                <Select
+                  id="roleUsuario"
+                  selectedKey="{formulario>/roleUsuario}">
+                  <core:Item key="" text="Selecione" />
+                  <core:Item key="Solicitante" text="Solicitante" />
+                  <core:Item key="Aprovador" text="Aprovador" />
+                  <core:Item key="Administrador" text="Administrador" />
+                </Select>
+              </f:SimpleForm>
+              <Toolbar>
+                <ToolbarSpacer />
+                <Button
+                  id="botaoCadastrar"
+                  text="Cadastrar solicitação"
+                  type="Emphasized"
+                  icon="sap-icon://add"
+                  press=".onCadastrar" />
+              </Toolbar>
+            </content>
+          </Panel>
+
+          <Panel headerText="Solicitações cadastradas" expandable="false">
+            <headerToolbar>
+              <OverflowToolbar>
+                <Title text="Solicitações cadastradas" level="H2" />
+                <ToolbarSpacer />
+                <Button
+                  id="botaoAtualizar"
+                  text="Atualizar"
+                  icon="sap-icon://refresh"
+                  press=".carregarSolicitacoes" />
+              </OverflowToolbar>
+            </headerToolbar>
+            <content>
+              <Table
+                id="tabelaSolicitacoes"
+                items="{solicitacoes>/items}"
+                busy="{solicitacoes>/carregando}"
+                noDataText="Nenhuma solicitação cadastrada."
+                growing="true"
+                growingScrollToLoad="true">
+                <columns>
+                  <Column><Text text="ID" /></Column>
+                  <Column width="18rem"><Text text="Descrição" /></Column>
+                  <Column><Text text="Centro de custo" /></Column>
+                  <Column hAlign="End"><Text text="Valor" /></Column>
+                  <Column><Text text="Usuário" /></Column>
+                  <Column><Text text="Role" /></Column>
+                  <Column><Text text="Data e hora" /></Column>
+                </columns>
+                <items>
+                  <ColumnListItem>
+                    <cells>
+                      <ObjectIdentifier title="{solicitacoes>id}" />
+                      <Text text="{solicitacoes>descricao}" wrapping="true" />
+                      <Text text="{solicitacoes>centroCusto}" />
+                      <ObjectNumber
+                        number="{path: 'solicitacoes>valor', formatter: '.formatter.valor'}" />
+                      <Text text="{solicitacoes>nomeUsuario}" />
+                      <ObjectStatus text="{solicitacoes>roleUsuario}" state="Information" />
+                      <Text
+                        text="{path: 'solicitacoes>criadoEm', formatter: '.formatter.dataHora'}" />
+                    </cells>
+                  </ColumnListItem>
+                </items>
+              </Table>
+            </content>
+          </Panel>
+        </VBox>
+      </content>
+    </Page>
+  </App>
+</mvc:View>

@@ -1,0 +1,10 @@
+node_modules/
+public/dist/
+public/dist-zip/
+mta_archives/
+resources/
+cypress/screenshots/
+cypress/videos/
+.DS_Store
+*.log
+cypress.env.json

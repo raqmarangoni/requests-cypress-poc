@@ -1,0 +1,103 @@
+_schema-version: "3.3"
+ID: qa-solicitacoes
+version: 1.0.0
+description: Aplicação de estudos de Quality Assurance para cadastro de solicitações
+
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+
+modules:
+  - name: qa-solicitacoes-api
+    type: nodejs
+    path: api
+    parameters:
+      memory: 256M
+      disk-quota: 512M
+      buildpack: nodejs_buildpack
+      command: npm start
+      routes:
+        - route: qa-solicitacoes-api-${org}-${space}.${default-domain}
+    build-parameters:
+      builder: npm-ci
+    provides:
+      - name: qa-solicitacoes-api-url
+        properties:
+          url: ${default-url}
+
+  - name: qa-solicitacoes-ui
+    type: html5
+    path: public
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist-zip
+      supported-platforms: []
+
+  - name: qa-solicitacoes-ui-content
+    type: com.sap.application.content
+    path: .
+    requires:
+      - name: qa-solicitacoes-html5-repo-host
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: resources
+      requires:
+        - name: qa-solicitacoes-ui
+          artifacts:
+            - qa-solicitacoes-ui.zip
+          target-path: resources/
+
+  - name: qa-solicitacoes-destination-content
+    type: com.sap.application.content
+    requires:
+      - name: qa-solicitacoes-destination
+        parameters:
+          content-target: true
+      - name: qa-solicitacoes-html5-repo-host
+        parameters:
+          service-key:
+            name: qa-solicitacoes-html5-repo-host-key
+    parameters:
+      content:
+        instance:
+          existing_destinations_policy: update
+          destinations:
+            - Name: qa-solicitacoes-html5-repo-host
+              ServiceInstanceName: qa-solicitacoes-html5-repo-host
+              ServiceKeyName: qa-solicitacoes-html5-repo-host-key
+              sap.cloud.service: qa.solicitacoes
+    build-parameters:
+      no-source: true
+
+resources:
+  - name: qa-solicitacoes-html5-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+      service-name: qa-solicitacoes-html5-repo-host
+
+  - name: qa-solicitacoes-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+      service-name: qa-solicitacoes-destination
+      config:
+        HTML5Runtime_enabled: true
+        init_data:
+          instance:
+            existing_destinations_policy: update
+            destinations:
+              - Name: qa-solicitacoes-api
+                Type: HTTP
+                ProxyType: Internet
+                Authentication: NoAuthentication
+                URL: https://qa-solicitacoes-api-${org}-${space}.${default-domain}
+                HTML5.DynamicDestination: true
+                HTML5.ForwardAuthToken: false
+        version: 1.0.0

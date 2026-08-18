@@ -1,0 +1,7 @@
+{
+  "descricao": "Solicitação criada pelo Cypress",
+  "centroCusto": "CC-TESTE-001",
+  "valor": "150.50",
+  "nomeUsuario": "Usuário Cypress",
+  "roleUsuario": "Solicitante"
+}

@@ -1,0 +1,7 @@
+node_modules/
+cypress/
+cypress.config.js
+public/
+mta_archives/
+*.log
+.DS_Store

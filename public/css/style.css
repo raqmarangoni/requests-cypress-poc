@@ -1,0 +1,11 @@
+.sapMPage {
+  background: var(--sapBackgroundColor);
+}
+
+.sapMPanel {
+  border-radius: var(--sapElement_BorderCornerRadius);
+}
+
+.sapMPanelContent {
+  border-bottom: 0;
+}

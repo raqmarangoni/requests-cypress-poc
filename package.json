@@ -1,0 +1,27 @@
+{
+  "name": "projeto-qa-solicitacoes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplicação simples para estudos práticos de Quality Assurance.",
+  "main": "api/server.js",
+  "scripts": {
+    "start": "node api/server.js",
+    "dev": "nodemon api/server.js",
+    "build:frontend": "node scripts/build-html5.js",
+    "build:btp": "mbt build",
+    "deploy:btp": "cf deploy mta_archives/qa-solicitacoes_1.0.0.mtar",
+    "cypress:open": "cypress open --browser chrome",
+    "cypress:run": "cypress run --browser chrome"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "cypress": "^15.20.1",
+    "mbt": "^1.2.49",
+    "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
