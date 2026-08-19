@@ -7,5 +7,7 @@ export const seletoresSolicitacao = {
   nomeUsuario: '[id$="--nomeUsuario-inner"]',
   roleUsuario: '[id$="--roleUsuario"].sapMSlt',
   botaoCadastrar: '[id$="--botaoCadastrar"]',
-  mensagem: '.sapMMessageToast'
+  mensagem: '.sapMMessageToast',
+  caixaDeMensagem: '.sapMMessageBox',
+  tabela: '[id$="--tabelaSolicitacoes"]'
 }
