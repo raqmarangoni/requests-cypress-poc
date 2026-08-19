@@ -42,7 +42,7 @@ app.post('/api/solicitacoes', (req, res) => {
   }
 
   const valorNumerico = Number(valor);
-  if (Number.isNaN(valorNumerico) || valorNumerico < 0) {
+  if (Number.isNaN(valorNumerico) || valorNumerico <= 0) {
     return res.status(400).json({ mensagem: 'O valor deve ser numérico e maior que zero.' });
   }
 
