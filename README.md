@@ -51,34 +51,110 @@ apagadas sempre que o servidor é reiniciado.
 | --- | --- |
 | `npm start` | Inicia o servidor Express |
 | `npm run dev` | Inicia o servidor com reinício automático |
+| `npm run validate:frontend` | Valida os arquivos obrigatórios e as configurações JSON |
 | `npm run build:frontend` | Gera os arquivos estáticos do frontend |
 | `npm run build:btp` | Gera o pacote MTA para o SAP BTP |
 | `npm run deploy:btp` | Envia o pacote MTA gerado ao Cloud Foundry |
 | `npm run cypress:open` | Abre a interface do Cypress |
 | `npm run cypress:run` | Executa os testes Cypress em modo headless |
 
-O Cypress está instalado e configurado em `cypress/e2e`.
+Os comandos do Cypress usam o Google Chrome por padrão.
+
+## Como a aplicação funciona
+
+```text
+Usuário
+  ↓
+Interface SAPUI5/Fiori
+  ↓ fetch("api/solicitacoes")
+xs-app.json / Destination do BTP
+  ↓
+API Node.js + Express
+  ↓
+Array em memória
+```
+
+Localmente, o Express entrega o frontend e responde à API na porta `3000`.
+No SAP BTP, as duas partes são publicadas separadamente:
+
+- o frontend fica no HTML5 Application Repository e é aberto pelo Work Zone;
+- a API roda como aplicação Node.js no Cloud Foundry;
+- a Destination `qa-solicitacoes-api` encaminha as chamadas do frontend para a API.
+
+### Fluxo de inicialização do frontend
+
+1. `public/index.html` carrega o runtime SAPUI5 e solicita o componente
+   `qa.solicitacoes`.
+2. `public/Component.js` inicializa a aplicação e cria dois `JSONModel`:
+   `formulario`, com os campos do cadastro, e `solicitacoes`, com a lista e o
+   estado de carregamento.
+3. `public/manifest.json` declara a view inicial, bibliotecas SAPUI5, modelos,
+   CSS e navegação utilizada pelo Work Zone.
+4. `public/view/Main.view.xml` monta a tela usando controles SAPUI5, como
+   `Input`, `TextArea`, `Select`, `Button`, `Panel` e `Table`.
+5. `public/controller/Main.controller.js` consulta a API, envia cadastros,
+   atualiza os models e apresenta mensagens com `MessageToast` ou `MessageBox`.
+6. Quando os models são atualizados, o data binding do SAPUI5 atualiza a tela
+   automaticamente.
+
+### Fluxo de cadastro
+
+1. O usuário preenche os controles vinculados ao model `formulario`.
+2. O botão chama `onCadastrar` no controller.
+3. O controller envia um `POST` para `api/solicitacoes` em JSON.
+4. A API valida os dados e devolve o status HTTP correspondente.
+5. Em caso de sucesso, o formulário é limpo e a listagem é consultada novamente.
+6. Em caso de erro, a mensagem devolvida pela API é exibida em uma caixa de diálogo.
+
+### Fluxo de consulta
+
+1. `onInit` chama `carregarSolicitacoes` quando a view é criada.
+2. O controller faz um `GET` em `api/solicitacoes`.
+3. A resposta é gravada em `solicitacoes>/items`.
+4. A `Table` cria uma linha para cada item do model.
+5. `public/model/formatter.js` formata valores em reais e datas no padrão brasileiro.
 
 ## Estrutura de pastas
 
 ```text
 projeto-qa-solicitacoes/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       └── deploy-btp.yml
 ├── api/
 │   ├── package-lock.json
 │   ├── package.json
 │   └── server.js
 ├── cypress/
-│   └── e2e/
+│   ├── e2e/
+│   │   ├── solicitacoes-api.cy.js
+│   │   └── solicitacoes-ui.cy.js
+│   ├── fixtures/
+│   └── support/
+│       ├── ambiente.js
+│       ├── commands.js
+│       ├── e2e.js
+│       ├── factories.js
+│       └── selectors.js
 ├── public/
-│   ├── app.js
+│   ├── controller/
+│   │   └── Main.controller.js
+│   ├── css/
+│   │   └── style.css
+│   ├── model/
+│   │   └── formatter.js
+│   ├── view/
+│   │   └── Main.view.xml
+│   ├── Component.js
 │   ├── index.html
 │   ├── manifest.json
 │   ├── package-lock.json
 │   ├── package.json
-│   ├── styles.css
 │   └── xs-app.json
 ├── scripts/
-│   └── build-html5.js
+│   ├── build-html5.js
+│   └── validate-frontend.js
 ├── .cfignore
 ├── .gitignore
 ├── cypress.config.js
@@ -90,6 +166,52 @@ projeto-qa-solicitacoes/
 
 As pastas `public/dist`, `public/dist-zip` e `mta_archives` são geradas durante
 o build e não devem ser versionadas.
+
+## Responsabilidade dos arquivos principais
+
+| Arquivo | Responsabilidade |
+| --- | --- |
+| `api/server.js` | Configura o Express, mantém os dados em memória e implementa os endpoints REST |
+| `public/index.html` | Inicializa o runtime SAPUI5 para execução standalone |
+| `public/Component.js` | Inicializa o componente e os models JSON |
+| `public/manifest.json` | Descreve a aplicação SAPUI5 e sua integração com o Work Zone |
+| `public/view/Main.view.xml` | Declara visualmente o formulário e a tabela |
+| `public/controller/Main.controller.js` | Controla consulta, cadastro, models e mensagens |
+| `public/model/formatter.js` | Formata moeda e data para exibição |
+| `public/xs-app.json` | Define as rotas do HTML5 Repository e o acesso à Destination da API |
+| `mta.yaml` | Define módulos, serviços, Destination, build e deploy no SAP BTP |
+| `scripts/build-html5.js` | Copia os arquivos publicáveis e prepara o ZIP do frontend |
+| `scripts/validate-frontend.js` | Confere configurações JSON e arquivos obrigatórios |
+| `cypress.config.js` | Configura specs, suporte e execução do Cypress |
+
+## Testes Cypress
+
+Os testes são separados por camada:
+
+- `solicitacoes-ui.cy.js` valida a interface publicada no Work Zone;
+- `solicitacoes-api.cy.js` chama diretamente os endpoints REST;
+- `commands.js` contém o login reutilizável no SAP BTP;
+- `selectors.js` centraliza os seletores gerados pelo SAPUI5;
+- `factories.js` cria massas únicas para que os testes possam ser repetidos;
+- `ambiente.js` centraliza as URLs públicas do ambiente.
+
+As credenciais devem ficar somente em `cypress.env.json`, que está ignorado pelo
+Git:
+
+```json
+{
+  "BTP_USERNAME": "seu-usuario",
+  "BTP_PASSWORD": "sua-senha"
+}
+```
+
+Para executar toda a suíte:
+
+```bash
+npm run cypress:run
+```
+
+Mais detalhes estão em `cypress/README.md`.
 
 ## API REST
 
